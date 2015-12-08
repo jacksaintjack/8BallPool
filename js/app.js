@@ -10,7 +10,10 @@ Game.Preloader.prototype = {
 
   preload: function() {},
 
-  create: function () {}
+  create: function () {
+
+    this.table = this.add.sprite(400)
+  }
 
 };
 
@@ -31,7 +34,21 @@ Game.Play.prototype = {
 
   init: function () {},
 
-  create: function(){},
+  create: function(){
+
+    //Placing the sprite postion
+    this.table = this.add.sprite(400, 300, 'table');
+
+    //Brings in the physics for the sprite
+    this.physics.p2.enable(this.table, Game.showDebug);
+    
+    //Physics from the JSON file is set to static to make sure it,
+    //it's self will not be influenced by anything else.
+    //Example: Ball hits table. Table flys of screen
+    this.table.body.static = true;
+    this.table.body.clearShape(); //Makes sure we don't see physics enabled rectangle
+    this.table.body.loadPolygon('table', 'pool-table-physics-shape'); // loads physics data from Cache
+  },
 
   togglePause: function() {},
 
