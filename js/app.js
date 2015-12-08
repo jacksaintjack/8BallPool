@@ -41,20 +41,37 @@ Game.Play.prototype = {
 
     //Brings in the physics for the sprite
     this.physics.p2.enable(this.table, Game.showDebug);
-    
+
     //Physics from the JSON file is set to static to make sure it,
     //it's self will not be influenced by anything else.
     //Example: Ball hits table. Table flys of screen
     this.table.body.static = true;
     this.table.body.clearShape(); //Makes sure we don't see physics enabled rectangle
     this.table.body.loadPolygon('table', 'pool-table-physics-shape'); // loads physics data from Cache
+
+    //Position of the pockets
+    this.pockets.body.addCircle(32, 64, 80);
+    this.pockets.body.addCircle(16, 400, 80);
+    this.pockets.body.addCircle(32, 736, 80);
+
+    this.pockets.body.addCircle(32, 64, 528);
+    this.pockets.body.addCircle(16, 400, 528);
+    this.pockets.body.addCircle(32, 736, 528);
+
+    //Adding physics to our balls
+    this.balls = this.add.physicsGroup(Phaser.Phsyics.P2JS);
+    this.balls.enableBodyDebug = Game.showDebug;
   },
 
   togglePause: function() {},
 
   toggleDebug: function() {},
 
-  makeBall: function(x, y, color) {},
+  // Using this method to generate our balls. x,y stand for the Position
+  // The color is the color of the balls
+  makeBall: function(x, y, color) {
+    var ball = this.balls.create(x, y, 'balls', color);
+  },
 
   takeShot: function () {},
 
