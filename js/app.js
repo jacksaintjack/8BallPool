@@ -8,11 +8,13 @@ Game.Preloader.prototype = {
 
   init: function () {},
 
-  preload: function() {},
+  preload: function() {
+    //Loading Physics in with the key table
+    this.load.physics('table')
+  },
 
   create: function () {
 
-    this.table = this.add.sprite(400)
   }
 
 };
@@ -36,6 +38,8 @@ Game.Play.prototype = {
 
   create: function(){
 
+    // ** Code for the Table ** //
+
     //Placing the sprite postion
     this.table = this.add.sprite(400, 300, 'table');
 
@@ -49,6 +53,13 @@ Game.Play.prototype = {
     this.table.body.clearShape(); //Makes sure we don't see physics enabled rectangle
     this.table.body.loadPolygon('table', 'pool-table-physics-shape'); // loads physics data from Cache
 
+    // ** Code for the Pockets in the Pool //
+    //Adding Blank Sprite for pockets
+    this.pockets = this.add.sprite();
+    this.physics.p2.enable(this.pockets, Game.showDebug);
+    //Setting phsyics when hit
+    this.pockets.body.static = true
+    this.pockets.body.clearShape();
     //Position of the pockets
     this.pockets.body.addCircle(32, 64, 80);
     this.pockets.body.addCircle(16, 400, 80);
@@ -58,7 +69,7 @@ Game.Play.prototype = {
     this.pockets.body.addCircle(16, 400, 528);
     this.pockets.body.addCircle(32, 736, 528);
 
-    //Adding physics to our balls
+    //** Code for Balls **//
     this.balls = this.add.physicsGroup(Phaser.Phsyics.P2JS);
     this.balls.enableBodyDebug = Game.showDebug;
   },
@@ -71,6 +82,23 @@ Game.Play.prototype = {
   // The color is the color of the balls
   makeBall: function(x, y, color) {
     var ball = this.balls.create(x, y, 'balls', color);
+
+    ball.body.setCircle(13); //Body is set to a circle with 13px
+    ball.body.fixedRotation = true; //Makes sure balls don't rotate
+    ball.body.setMaterial(this.ballMaterial);
+    //Starts slowing down the ball after an impact.
+    ball.body.damping = 0.40;
+    ball.body.angularDamping = 0.45;
+    // this is called when the ball goes into the pocket
+    ball.body.createBodyCallback(this.pockets, this.hitPocket, this)
+
+    //Creating a shadow for my ball
+    var shadow = this.shadows.create(x + 4, y + 4, 'balls', 4);
+    shadow.anchor.set(0.5);
+
+    ball.shadow = shadow;
+
+    return ball;
   },
 
   takeShot: function () {},
