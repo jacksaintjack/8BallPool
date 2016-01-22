@@ -1,4 +1,10 @@
-Var Game = {}
+var Game = {
+  showDebug: false,
+  RED:0,
+  YELLOW: 1,
+  WHITE: 2,
+  BLACK: 3
+};
 
 Game.Preloader = function () {};
 
@@ -6,15 +12,24 @@ Game.Preloader = function () {};
 //Should get the information for my game upon starting
 Game.Preloader.prototype = {
 
-  init: function () {},
+  init: function () {
+    this.input.maxPointers = 1;
+    this.scale.pageAlignHorizontally = true;
+    this.game.renderer.renderSession.roundPixels = true;
+    this.physics.startSystem(Phaser.Physics.P2JS);
+  },
 
   preload: function() {
+    this.load.path = 'assets/';
+    this.load.bitmapFont('fat-and-tiny');
+    this.load.images([ 'logo', 'table', 'cushions', 'cue', 'fill' ]);
+    this.load.spritesheet('balls', 'balls.png', 26, 26);
     //Loading Physics in with the key table
     this.load.physics('table')
   },
 
   create: function () {
-
+    this.state.start('Pool.MainMenu');
   }
 
 };
@@ -24,17 +39,59 @@ Game.MainMeu = function() {};
 
 Game.MainMenu.prototype = {
 
-  create: function(){},
+  create: function(){
+    this.stage.backgroundColor = 0x001b07;
 
-  start: function (){}
+    var logo = this.add.image(this.world.centerX, 140, 'logo');
+    logo.anchor.x = 0.5;
+
+    var start = this.add.bitmapText(this.world.centerX, 460, 'fat-and-tiny', 'CLICK TO PLAY', 64);
+    start.anchor.x = 0.5;
+    start.smoothed = false;
+    start.tint = 0xff0000;
+
+    this.input.onDown.addOnce(this.start, this);
+  },
+
+  start: function (){
+    this.state.start('Game.Game');
+  }
 };
 
 //The state that should be loaded when I start playing the game
-Game.Play = function(play) {};
+Game.Game = function(game) {
+  this.score = 0;
+  this.scoreText = null;
 
-Game.Play.prototype = {
+  this.speed = 0;
+  this.allowShotSpeed = 20.0;
 
-  init: function () {},
+  this.balls = null;
+  this.shadows = null;
+
+  this.cue = null;
+  this.fill = null;
+  this.fillRect = null;
+  this.aimLine = null;
+
+  this.cueball = null;
+
+  this.resetting = false;
+  this.placeball = null;
+  this.placeballShadow = null;
+  this.placeRect = null;
+
+  this.pauseKey = null;
+  this.debugKey = null;
+};
+
+Game.Game.prototype = {
+
+  init: function () {
+    this.score = 0;
+    this.speed = 0;
+    this.resetting = false;
+  },
 
   create: function(){
 
@@ -118,6 +175,18 @@ Game.Play.prototype = {
     //Cue Ball
     this.cueball = this.makeBall(576, 305, Game.WHITE);
 
+    // placing cue ball and its shadow
+    this.placeball = this.add.sprite(0, 0, 'balls', Pool.WHITE);
+    this.placeball.anchor.set(0.5);
+    this.placeball.visible = false;
+
+    this.placeballShadow = this.shadows.create(0, 0, 'balls', 4);
+    this.placeballShadow.anchor.set(0.5);
+    this.placeballShadow.visible = false;
+
+    //Making sure that the cue ball can only be place on the table
+    this.placeRect = new Phaser.Rectangle(112, 128, 576, 352);
+
     //VS Physics
     var ballVsTableMaterial = this.physics.p2.createContactMaterial(
       this.ballMaterial, this.tableMaterial);
@@ -146,9 +215,14 @@ Game.Play.prototype = {
         )
       },
 
-      togglePause: function() {},
+      togglePause: function() {
+        this.game.paused = (this.game.paused) ? false : true;
+      },
 
-      toggleDebug: function() {},
+      toggleDebug: function() {
+        Pool.showDebug = (Pool.showDebug) ? false : true;
+        this.state.restart();
+      },
 
       // Using this method to generate our balls. x,y stand for the Position
       // The color is the color of the balls
@@ -214,9 +288,61 @@ Game.Play.prototype = {
 
         this.cueball.body.x = 16;
         this.cueball.body.y = 16;
+
+        //Stop the cue ball from colliding with other objects while a new location for it is found
+        this.resetting = true;
+
+        //Making a fake cue ball for placement. A shadow ball if you will
+        this.cueball.visible = false;
+        this.cueball.shadow.visible = false;
+
+        this.placeball.x = this.input.activePointer.x;
+        this.placeball.y = this.input.activePointer.y;
+        this.placeball.visible = true;
+
+        this.placeballShadow.x = this.placeball.x + 10;
+        this.placeballShadow.y = this.placeball.y + 10;
+        this.placeballShadow.visible = true
+
+        this.input.onDown.remove(this.takeShot, this);  //disabled take shot
+        this.input.onDown.add(this.placeCueBall, this); //enabled placeCueBall
       },
 
-      placeCueBall: function() {},
+      placeCueBall: function() {
+        //Checking to make sure that the cue ball is not overlapping another ball
+        var a = new Phaser.Circle(this.placeball.x, this.placeball.y, 26);
+        var b = new Phaser.Circle(0, 0, 26);
+
+        for (var i = 0; i < this.balls.length; i++)
+        {
+          var ball = this.balls.children[i];
+
+          if (ball.frame !==2 ball.exists)
+          {
+            b.x = ball.x;
+            b.y = ball.y;
+
+            if(Phaser.Circle.intersects(a, b))
+            {
+              return;
+            }
+          }
+        }
+
+        //Removing place ball, updating cue ball position and bring back cue
+        this.cueball.reset(this.placeball.x, this.placeball.y);
+        this.cueball.body.reset(this.placeball.x, this.placeball.y);
+        this.cueball.visible = true;
+        this.cueball.shadow.visible =true;
+
+        this.placeball.visible = false;
+        this.placeballShadow.visible = false;
+
+        this.resetting = false;
+
+        this.input.onDown.remove(this.placeCueBall, this);
+        this.input.onDown.add(this.takeShot, this);
+      },
 
       //Updating the position of the aimline
       updateCue: function () {
@@ -234,8 +360,25 @@ Game.Play.prototype = {
         this.fillRect.Width = this.aimLine.length;
         this.fill.updateCrop();
       },
+      //Used for when you are placing the shadow ball. It will follw the mouse.
+      update: function (){
+        if (this.resetting) {
+          this.placeball.x = this.math.clamp(
+            this.input.x, this.placeRect.left, this.placeRect.right
+          );
+          this.placeball.y = this.math.clamp(
+            this.input.y, this.placeRect.top, this.placeRect.bottom
+          );
 
-      update: function (){},
+          this.placeballShadow.x = this.placeball.x + 10;
+          this.placeballShadow.y = this.placeball.y + 10;
+        }
+        else
+        {
+            this.updateSpeed();
+            this.updateCue();
+        }
+      },
 
       //Determines the speed of the cue ball
       updateSpeed: function () {
@@ -264,7 +407,27 @@ Game.Play.prototype = {
         ball.shadow.y = ball.y + 4;
       },
 
-      gameOver: function () {},
+      gameOver: function () {
+        this.state.start('Pool.MainMenu');
+      },
 
-      render: function() {}
+      render: function() {
+        if (Pool.showDebug) {
+            if (this.speed < 6)
+            {
+                this.game.debug.geom(this.aimLine);
+            }
+
+            this.game.debug.text("speed: " + this.speed, 540, 24);
+            this.game.debug.text("power: " + (this.aimLine.length / 3), 540, 48);
+        }
+      }
     };
+
+    var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'game', null, false, true);
+
+    game.state.add('Pool.Preloader', Pool.Preloader);
+    game.state.add('Pool.MainMenu', Pool.MainMenu);
+    game.state.add('Pool.Game', Pool.Game);
+
+    game.state.start('Pool.Preloader');
