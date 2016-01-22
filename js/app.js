@@ -29,13 +29,13 @@ Game.Preloader.prototype = {
   },
 
   create: function () {
-    this.state.start('Pool.MainMenu');
+    this.state.start('Game.MainMenu');
   }
 
 };
 
 //My First state upon loading the game
-Game.MainMeu = function() {};
+Game.MainMenu = function() {};
 
 Game.MainMenu.prototype = {
 
@@ -107,7 +107,7 @@ Game.Game.prototype = {
     //it's self will not be influenced by anything else.
     //Example: Ball hits table. Table flys of screen
     this.table.body.static = true;
-    this.table.body.clearShape(); //Makes sure we don't see physics enabled rectangle
+    this.table.body.clearShapes(); //Makes sure we don't see physics enabled rectangle
     this.table.body.loadPolygon('table', 'pool-table-physics-shape'); // loads physics data from Cache
     //loading matierla for table
     this.tableMaterial = this.physics.p2.createMaterial('tableMaterial', this.table.body);
@@ -118,7 +118,7 @@ Game.Game.prototype = {
     this.physics.p2.enable(this.pockets, Game.showDebug);
     //Setting phsyics when hit
     this.pockets.body.static = true
-    this.pockets.body.clearShape();
+    this.pockets.body.clearShapes();
     //Position of the pockets
     this.pockets.body.addCircle(32, 64, 80);
     this.pockets.body.addCircle(16, 400, 80);
@@ -136,7 +136,7 @@ Game.Game.prototype = {
     //cushion placed on top of shadow sprite so that the shadow will not bleed over on other sprites
     this.add.sprite(0, 0, 'cushions');
 
-    this.balls = this.add.physicsGroup(Phaser.Phsyics.P2JS);
+    this.balls = this.add.physicsGroup(Phaser.Physics.P2JS);
     this.balls.enableBodyDebug = Game.showDebug;
 
     //Defining materials for the balls
@@ -144,7 +144,7 @@ Game.Game.prototype = {
 
     //Row one of Balls on Rack (200 is the x cordinate)
     var y = 241;
-    this.makeBall(200, Game.RED);
+    this.makeBall(200, y, Game.RED);
     this.makeBall(200, y + 32, Game.YELLOW);
     this.makeBall(200, y + 64, Game.YELLOW);
     this.makeBall(200, y + 96, Game.RED);
@@ -176,7 +176,7 @@ Game.Game.prototype = {
     this.cueball = this.makeBall(576, 305, Game.WHITE);
 
     // placing cue ball and its shadow
-    this.placeball = this.add.sprite(0, 0, 'balls', Pool.WHITE);
+    this.placeball = this.add.sprite(0, 0, 'balls', Game.WHITE);
     this.placeball.anchor.set(0.5);
     this.placeball.visible = false;
 
@@ -211,8 +211,8 @@ Game.Game.prototype = {
         ///Created a phaser line object to handle pull back of the cue
         this.aimLine = new Phaser.Line(
           this.cueball.x, this.cueball.y,
-          this.cueball.x, this.cueball.y);
-        )
+          this.cueball.x, this.cueball.y
+        );
       },
 
       togglePause: function() {
@@ -220,7 +220,7 @@ Game.Game.prototype = {
       },
 
       toggleDebug: function() {
-        Pool.showDebug = (Pool.showDebug) ? false : true;
+        Game.showDebug = (Game.showDebug) ? false : true;
         this.state.restart();
       },
 
@@ -317,7 +317,7 @@ Game.Game.prototype = {
         {
           var ball = this.balls.children[i];
 
-          if (ball.frame !==2 ball.exists)
+          if (ball.frame !==2 && ball.exists)
           {
             b.x = ball.x;
             b.y = ball.y;
@@ -347,7 +347,7 @@ Game.Game.prototype = {
       //Updating the position of the aimline
       updateCue: function () {
         this.aimLine.start.set(this.cueball.x, this.cueball.y);
-        this.aimLine.end.set(this.input.activePoint.x, this.input.activePointer.y);
+        this.aimLine.end.set(this.input.activePointer.x, this.input.activePointer.y);
 
         //Align cue sprite
         this.cue.position.copyFrom(this.aimLine.start);
@@ -408,11 +408,11 @@ Game.Game.prototype = {
       },
 
       gameOver: function () {
-        this.state.start('Pool.MainMenu');
+        this.state.start('Game.MainMenu');
       },
 
       render: function() {
-        if (Pool.showDebug) {
+        if (Game.showDebug) {
             if (this.speed < 6)
             {
                 this.game.debug.geom(this.aimLine);
@@ -426,8 +426,8 @@ Game.Game.prototype = {
 
     var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'game', null, false, true);
 
-    game.state.add('Pool.Preloader', Pool.Preloader);
-    game.state.add('Pool.MainMenu', Pool.MainMenu);
-    game.state.add('Pool.Game', Pool.Game);
+    game.state.add('Game.Preloader', Game.Preloader);
+    game.state.add('Game.MainMenu', Game.MainMenu);
+    game.state.add('Game.Game', Game.Game);
 
-    game.state.start('Pool.Preloader');
+    game.state.start('Game.Preloader');
