@@ -1,0 +1,22 @@
+{
+  "name": "8BallPool",
+  "version": "1.0.0",
+  "description": "",
+  "main": "token.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jacksaintjack/8BallPool.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jacksaintjack/8BallPool/issues"
+  },
+  "homepage": "https://github.com/jacksaintjack/8BallPool",
+  "dependencies": {
+    "phaser": "^2.4.4"
+  }
+}
